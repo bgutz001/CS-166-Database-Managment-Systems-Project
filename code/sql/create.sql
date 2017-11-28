@@ -153,5 +153,26 @@ CREATE TRIGGER passenger_insert_t BEFORE INSERT
 ON Passenger FOR EACH ROW
 EXECUTE PROCEDURE passenger_insert();
 
+
+--Create bookRef sequence
+DROP SEQUENCE IF EXISTS bookRefseq;
+CREATE SEQUENCE bookRefseq;
+SELECT setval('bookRefseq', MAX(bookRef)) FROM Booking;
+
+CREATE OR REPLACE FUNCTION booking_insert()
+RETURNS "trigger" AS $BODY$
+BEGIN
+	NEW.bookRef = nextval('bookRefseq');
+	RETURN NEW;
+END;
+$BODY$ 
+LANGUAGE plpgsql VOLATILE;
+
+CREATE TRIGGER booking_insert_t BEFORE INSERT
+ON Booking FOR EACH ROW
+EXECUTE PROCEDURE booking_insert();
+
+
 --GRANT USER PRIVELEGES TO ACCESS THE SEQUENCE
 GRANT ALL PRIVILEGES ON SEQUENCE pIDseq TO bgutz;
+GRANT ALL PRIVILEGES ON SEQUENCE bookRefseq TO bgutz;
