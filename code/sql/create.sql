@@ -81,21 +81,7 @@ GRANT ALL PRIVILEGES ON TABLE Ratings TO bgutz;
 GRANT ALL PRIVILEGES ON TABLE Booking TO bgutz;
 ------------------------------------------------------------------------------------
 
---Create pID sequence
-CREATE SEQUENCE pIDseq START WITH 1;
 
-CREATE OR REPLACE FUNCTION passenger_insert()
-RETURNS "trigger" AS $BODY$
-BEGIN
-	NEW.pID = nextval('pIDseq');
-	RETURN NEW;
-END;
-$BODY$ 
-LANGUAGE plpgsql VOLATILE;
-
-CREATE TRIGGER passenger_insert_t BEFORE INSERT
-ON Passenger FOR EACH ROW
-EXECUTE PROCEDURE passenger_insert();
 
 --Copy in Data
 COPY Airline (
@@ -149,5 +135,23 @@ FROM 'bookings.csv'
 WITH DELIMITER ',';
 --SELECT * FROM Booking;
 
+--Create pID sequence
+DROP SEQUENCE IF EXISTS pIDseq;
+CREATE SEQUENCE pIDseq;
+SELECT setval('pIDseq', MAX(pID)) FROM Passenger;
 
+CREATE OR REPLACE FUNCTION passenger_insert()
+RETURNS "trigger" AS $BODY$
+BEGIN
+	NEW.pID = nextval('pIDseq');
+	RETURN NEW;
+END;
+$BODY$ 
+LANGUAGE plpgsql VOLATILE;
 
+CREATE TRIGGER passenger_insert_t BEFORE INSERT
+ON Passenger FOR EACH ROW
+EXECUTE PROCEDURE passenger_insert();
+
+--GRANT USER PRIVELEGES TO ACCESS THE SEQUENCE
+GRANT ALL PRIVILEGES ON SEQUENCE pIDseq TO bgutz;

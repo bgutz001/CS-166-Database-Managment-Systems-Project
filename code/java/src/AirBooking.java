@@ -25,7 +25,8 @@ import java.util.List;
 import java.util.ArrayList;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
-import java.util.Date;
+import java.sql.Date;
+
 
 /**
  * This class defines a simple embedded SQL utility class that is designed to
@@ -301,27 +302,37 @@ public class AirBooking{
 	}//end readChoice
 	
 	public static void AddPassenger(AirBooking esql){//1
-		//Add a new passenger to the database
+	    //Add a new passenger to the database
 	    try{ 
-	    String sql = null;
-	    // TODO should passenger id be a sequence value
-	    System.out.print("Enter the passenger's passport number: ");
-	    int passNum = Integer.parseInt(in.readLine());
+		String sql = null;
 
-	    System.out.print("Enter the passenger's full name: ");
-	    String name = in.readLine();
+		System.out.print("Enter the passenger's passport number: ");
+		String passNum = in.readLine();
 
-	    System.out.print("Enter the passenger's birth date <YYYY-MM-DD>: ");
-	    DateFormat df = new SimpleDateFormat("yyy-MM-dd");
-	    Date date = df.parse(in.readLine());
+		System.out.print("Enter the passenger's full name: ");
+		String name = in.readLine();
 
-	    System.out.print("Enter the passenger's country: ");
-	    String country = in.readLine();
+		System.out.print("Enter the passenger's birth date <YYYY-MM-DD>: ");
 
-	    sql = "INSERT INTO Passenger (passNum, fullName, bdate, country) " +
-		"VALUES (" + passNum + ", " + name + ", " + date + ", " + country + ");";
+		Date date = null;
+		while (date == null) {
+		    try {
+			date = Date.valueOf(in.readLine());
+		    }
+		    catch (Exception e1) {
+			System.out.print("Invalid Format! Use YYYY-MM-DD: ");
+		    }
+		}
+	    
+		System.out.print("Enter the passenger's country: ");
+		String country = in.readLine();
 
-	    esql.executeUpdate(sql);
+		sql = "INSERT INTO Passenger (passNum, fullName, bdate, country) " +
+		    "VALUES ('" + passNum + "', '" + name + "', '" + date + "', '" + country + "');";
+
+		System.out.println(sql);
+
+		esql.executeUpdate(sql);
 	    } catch (Exception e) {
 		System.err.println(e.getMessage());
 	    }
