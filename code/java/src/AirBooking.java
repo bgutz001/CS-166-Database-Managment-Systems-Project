@@ -501,8 +501,49 @@ public class AirBooking{
 	//Insert a new route for the airline
     }
 	
+    // TODO check that origin/destination exist?
     public static void ListAvailableFlightsBetweenOriginAndDestination(AirBooking esql) throws Exception{//5
 	//List all flights between origin and distination (i.e. flightNum,origin,destination,plane,duration) 
+	String sql = null;
+	int result = 0;
+	String origin = null;
+	String destination = null;
+	
+	// Get the origin
+	do {
+	    System.out.print("Enter the origin: ");
+	    try {
+		origin = in.readLine();
+		break;
+	    } catch (Exception e) {
+		System.out.println("Invalid input."); // TODO
+	    }
+	} while (true);
+	   
+	// Get the destination
+	do {
+	    System.out.print("Enter the destination: ");
+	    try {
+		destination = in.readLine();
+		break;
+	    } catch (Exception e) {
+		System.out.println("Invalid input."); // TODO
+	    }
+	} while (true);
+	
+	// Execute query
+	sql = String.format("SELECT flightNum, origin, destination, plane, duration " +
+			    "FROM Flight WHERE origin='%s' AND destination='%s';", origin, destination);
+	try {
+	    result = esql.executeQueryAndPrintResult(sql);
+	} catch (Exception e) {
+	    System.out.println("Sorry, something went wrong");
+	    System.err.println(e.getMessage());
+	}
+	
+	if (result == 0) {
+	    System.out.println(String.format("There are no flights from '%s' to '%s'.", origin, destination));
+	}
     }
 	
     public static void ListMostPopularDestinations(AirBooking esql){//6
