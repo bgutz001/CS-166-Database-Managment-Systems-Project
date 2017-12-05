@@ -7,4 +7,4 @@ export PGDATA=$PGFOLDER/myDB/data
 #DATABASE LISTENING PORT
 export PGPORT=$1
 
-pg_ctl -o "-c unix_socket_directories=$PGFOLDER/myDB/sockets -p $PGPORT" -D $PGDATA -l $PGFOLDER/logfile start
+pg_ctl -w -o "-c unix_socket_directories=$PGFOLDER/myDB/sockets -p $PGPORT" -D $PGDATA -l $PGFOLDER/logfile start
