@@ -10,3 +10,7 @@ SELECT *
 FROM Ratings R
 WHERE R.pID = 0
 ;
+
+SELECT DISTINCT origin, destination
+FROM Flight
+;
