@@ -537,7 +537,7 @@ public class AirBooking{
 	try {
 	    result = esql.executeQueryAndPrintResult(sql);
 	} catch (Exception e) {
-	    System.out.println("Sorry, something went wrong");
+	    System.out.println("Sorry, something went wrong.");
 	    System.err.println(e.getMessage());
 	}
 	
@@ -552,6 +552,51 @@ public class AirBooking{
 	
     public static void ListHighestRatedRoutes(AirBooking esql){//7
 	//List the k highest rated Routes (i.e. Airline Name, flightNum, Avg_Score)
+	String sql = null;
+	int k = 10;
+
+	// Get k
+	do {
+	    try {
+		break; // TODO
+	    } catch (Exception e) {
+		System.out.println("Invalid input, please enter an integer.");
+	    }
+	} while (true);
+
+	// List highest rated routes
+	try {	
+	    // Get averge ratings of every flight in order
+	    sql = String.format("SELECT F.flightNum, AVG(R.score) " +
+				"FROM Flight F, Ratings R " +
+				"WHERE F.flightNum = R.flightNum " + 
+				"GROUP BY F.flightNum " +
+				"ORDER BY AVG(R.score) DESC;");
+
+	    List<List<String>> flights = esql.executeQueryAndReturnResult(sql);
+	    for (int i = 0; i < flights.size() && i < k; ++i) {
+		// Get flight info
+		sql = String.format("SELECT A.name, F.flightNum, F.origin, F.destination, F.plane " +
+				    "FROM Airline A, Flight F " + 
+				    "WHERE A.airId = F.airId AND F.flightNum='%s';", flights.get(i).get(0));
+		List<List<String>> info = esql.executeQueryAndReturnResult(sql);
+
+		// Print result
+		for (List<String> tuple : info) {
+		    System.out.print(String.format("%-25s", tuple.get(0))); // Airline name
+		    System.out.print(String.format("%-9s", tuple.get(1))); // Flight num
+		    System.out.print(String.format("%-17s", tuple.get(2))); // Origin
+		    System.out.print(String.format("%-17s", tuple.get(3))); // Destination
+		    System.out.print(String.format("%-17s", tuple.get(4))); // Plane
+		}
+		System.out.print(String.format("%.2f", Double.parseDouble(flights.get(i).get(1)))); // Average rating
+		System.out.println();
+	    }
+	     
+	} catch (Exception e) {
+	    System.out.println("Sorry, something went wrong.");
+	    System.err.println(e.getMessage());
+	}
     }
 	
     public static void ListFlightFromOriginToDestinationInOrderOfDuration(AirBooking esql){//8
