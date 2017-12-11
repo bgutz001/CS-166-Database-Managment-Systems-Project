@@ -11,6 +11,8 @@ FROM Ratings R
 WHERE R.pID = 0
 ;
 
-SELECT DISTINCT origin, destination
+SELECT DISTINCT origin, destination, COUNT(*)
 FROM Flight
+GROUP BY origin, destination
+ORDER BY COUNT(*) DESC
 ;

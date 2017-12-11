@@ -557,8 +557,15 @@ public class AirBooking{
 
 	// Get k
 	do {
+	    System.out.print("Enter the number of routes to list: ");
 	    try {
-		break; // TODO
+		k = Integer.parseInt(in.readLine());
+		if (k <= 0) {
+		    System.out.println("Invalid range!");
+		}
+		else {
+		    break;
+		}
 	    } catch (Exception e) {
 		System.out.println("Invalid input, please enter an integer.");
 	    }
@@ -566,6 +573,10 @@ public class AirBooking{
 
 	// List highest rated routes
 	try {	
+	    System.out.println(String.format("%-25s%-9s%-17s%-17s%-17s%s",
+						 "Airline", "Flight", "Origin", "Destination", "Plane", "Rating"));
+	    System.out.println("------------------------------------------------------------------------------------------------");
+
 	    // Get averge ratings of every flight in order
 	    sql = String.format("SELECT F.flightNum, AVG(R.score) " +
 				"FROM Flight F, Ratings R " +
@@ -574,6 +585,7 @@ public class AirBooking{
 				"ORDER BY AVG(R.score) DESC;");
 
 	    List<List<String>> flights = esql.executeQueryAndReturnResult(sql);
+	    
 	    for (int i = 0; i < flights.size() && i < k; ++i) {
 		// Get flight info
 		sql = String.format("SELECT A.name, F.flightNum, F.origin, F.destination, F.plane " +
@@ -592,7 +604,6 @@ public class AirBooking{
 		System.out.print(String.format("%.2f", Double.parseDouble(flights.get(i).get(1)))); // Average rating
 		System.out.println();
 	    }
-	     
 	} catch (Exception e) {
 	    System.out.println("Sorry, something went wrong.");
 	    System.err.println(e.getMessage());
@@ -601,6 +612,81 @@ public class AirBooking{
 	
     public static void ListFlightFromOriginToDestinationInOrderOfDuration(AirBooking esql){//8
 	//List flight to destination in order of duration (i.e. Airline name, flightNum, origin, destination, duration, plane)
+	String sql = null;
+	String origin = null;
+	String destination = null;
+	int k = 10;
+
+	// Get k
+	do {
+	    System.out.print("Enter the number of flights to list: ");
+	    try {
+		k = Integer.parseInt(in.readLine());
+		if (k <= 0) {
+		    System.out.println("Invalid range!");
+		}
+		else {
+		    break;
+		}
+	    } catch (Exception e) {
+		System.out.println("Invalid input, please enter an integer.");
+	    }
+	} while (true);
+
+	// Get the origin
+	do {
+	    System.out.print("Enter the origin: ");
+	    try {
+		origin = in.readLine();
+		break;
+	    } catch (Exception e) {
+		System.out.println("Invalid input!");
+	    }
+	} while (true);
+	   
+	// Get the destination
+	do {
+	    System.out.print("Enter the destination: ");
+	    try {
+		destination = in.readLine();
+		break;
+	    } catch (Exception e) {
+		System.out.println("Invalid input!");
+	    }
+	} while (true);
+	
+	// Execute query
+	try {
+	    // Get flights in order of duration
+	    sql = String.format("SELECT A.name, F.flightNum, F.origin, F.destination, F.plane, F.duration " +
+				"FROM Flight F, Airline A " +
+				"WHERE F.airId=A.airId AND F.origin='%s' AND F.destination='%s' " + 
+				"ORDER BY F.duration ASC;", origin, destination);
+
+	    List<List<String>> flights = esql.executeQueryAndReturnResult(sql);
+
+	    if (flights.size() == 0) {
+		System.out.println(String.format("There are no flights from '%s' to '%s'.", origin, destination));
+	    }
+	    else {
+		System.out.println(String.format("%-25s%-9s%-17s%-17s%-17s%s",
+						 "Airline", "Flight", "Origin", "Destination", "Plane", "Duration"));
+		System.out.println("------------------------------------------------------------------------------------------------");
+	    }
+
+	    for (int i = 0; i < flights.size() && i < k; ++i) {
+		System.out.print(String.format("%-25s", flights.get(i).get(0))); // Airline name
+		System.out.print(String.format("%-9s", flights.get(i).get(1))); // Flight num
+		System.out.print(String.format("%-17s", flights.get(i).get(2))); // Origin
+		System.out.print(String.format("%-17s", flights.get(i).get(3))); // Destination
+		System.out.print(String.format("%-17s", flights.get(i).get(4))); // Plane
+		System.out.print(String.format("%d", Integer.parseInt(flights.get(i).get(5)))); // Duration
+		System.out.println();
+	    }
+	} catch (Exception e) {
+	    System.out.println("Sorry, something went wrong.");
+	    System.err.println(e.getMessage());
+	}
     }
 	
     public static void FindNumberOfAvailableSeatsForFlight(AirBooking esql){//9
