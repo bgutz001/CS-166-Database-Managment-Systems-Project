@@ -11,6 +11,11 @@ FROM Ratings R
 WHERE R.pID = 0
 ;
 
+SELECT flightNum, departure, COUNT(*)
+FROM Booking B
+GROUP BY flightNum, departure
+;
+
 SELECT DISTINCT origin, destination, COUNT(*)
 FROM Flight
 GROUP BY origin, destination

@@ -348,7 +348,7 @@ public class AirBooking{
 		break; // Date is valid
 	    }
 	    catch (Exception e) {
-		System.out.println("Invalid Format! Use YYYY-MM-DD.");
+		System.out.println("Please enter a valid date. Use YYYY-MM-DD.");
 	    }
 	} while (true);
 	    
@@ -439,7 +439,8 @@ public class AirBooking{
 		    continue;
 		}
 	    } catch (Exception e) {
-		System.out.println("Shouldn't see this"); // TODO error message
+		System.out.println("Sorry, something went wrong.");
+		System.err.println(e.getMessage());
 	    }
 
 	    // Check if a rating doesn't already exists
@@ -690,8 +691,88 @@ public class AirBooking{
     }
 	
     public static void FindNumberOfAvailableSeatsForFlight(AirBooking esql){//9
-	//
+	//Find the number of seats available for a given flight on a given date
+	String sql = null;
+	String flightNum = null;
+	Date date = null;
+	int result = 0;
+	
+	// Get flight number
+	do {
+	    System.out.print("Enter the flight number: ");
+	    try {
+		flightNum = in.readLine();
+		// Check if flight number exists
+		String sqlflightNum = String.format("SELECT * FROM Flight WHERE flightNum = '%s';", flightNum);
+		result = esql.executeQuery(sqlflightNum);
+		if (result == 0) { // flight number doesn't exist
+		    System.out.println("Flight doesn't exist, please enter a valid flight number.");
+		}
+		else { // flight number exists
+		    break;
+		}
+	    } catch (Exception e) {
+		System.out.println("Invlaid input!");
+	    }
+	} while (true);
+
+	// Get date
+	do {
+	    System.out.print("Enter the flight's date <YYYY-MM-DD>: ");
+	    try {
+		date = Date.valueOf(in.readLine());
+		// Date is valid
+		break;
+	    }
+	    catch (Exception e) {
+		System.out.println("Please enter a valid date. Use YYYY-MM-DD.");
+	    }
+	} while (true);
 		
+	// Execute Query
+	try {
+	    sql = String.format("SELECT F.flightNum, F.origin, F.destination, B.departure, COUNT(*), F.seats, F.seats-COUNT(*) " +
+				"FROM Flight F, Booking B " +
+				"WHERE F.flightNum=B.flightNum AND F.flightNum='%s' AND B.departure='%s' " +
+				"GROUP BY F.flightNum, F.origin, F.destination, B.departure, F.seats;", flightNum, date.toString());
+
+	    List<List<String>> seats = esql.executeQueryAndReturnResult(sql);
+
+	    System.out.println(String.format("%-9s%-17s%-17s%-15s%-15s%-15s%-15s",
+					     "Flight", "Origin", "Destination", "Departure",
+					     "Booked Seats", "Total Seats", "Free Seats"));
+	    System.out.println("------------------------------------------------------------------------------------------------");
+
+	    if (seats.size() == 0) { // Every seat is free that day
+		sql = String.format("SELECT F.flightNum, F.origin, F.destination, F.seats " +
+				    "FROM Flight F " + 
+				    "WHERE F.flightNum='%s';", flightNum);
+		seats = esql.executeQueryAndReturnResult(sql);
+		System.out.print(String.format("%-9s", seats.get(0).get(0))); // Flight num
+		System.out.print(String.format("%-17s", seats.get(0).get(1))); // Origin
+		System.out.print(String.format("%-17s", seats.get(0).get(2))); // Destination
+		System.out.print(String.format("%-15s", date.toString())); // Departure
+		System.out.print(String.format("%-15s", "0")); // Booked Seats
+		System.out.print(String.format("%-15s", seats.get(0).get(3))); // Total Seats
+		System.out.print(String.format("%-15s", seats.get(0).get(3))); // Free Seats
+		System.out.println();
+		return;
+	    }
+
+	    for (int i = 0; i < seats.size(); ++i) {
+		System.out.print(String.format("%-9s", seats.get(i).get(0))); // Flight num
+		System.out.print(String.format("%-17s", seats.get(i).get(1))); // Origin
+		System.out.print(String.format("%-17s", seats.get(i).get(2))); // Destination
+		System.out.print(String.format("%-15s", seats.get(i).get(3))); // Departure
+		System.out.print(String.format("%-15s", seats.get(i).get(4))); // Booked Seats
+		System.out.print(String.format("%-15s", seats.get(i).get(5))); // Total Seats
+		System.out.print(String.format("%-15s", seats.get(i).get(6))); // Free Seats
+		System.out.println();
+	    }
+	} catch (Exception e) {
+	    System.out.println("Sorry, something went wrong.");
+	    System.err.println(e.getMessage());
+	}
     }
     
 }
