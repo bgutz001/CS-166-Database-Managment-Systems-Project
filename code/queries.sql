@@ -1,3 +1,13 @@
+SELECT *
+FROM Airline A
+WHERE A.name='Atlantic Airlines'
+;
+
+SELECT *
+FROM Passenger P
+WHERE P.country='HELL'
+;
+
 SELECT B.pID, B.flightNum
 FROM Booking B
 WHERE B.pID = 0 AND NOT EXISTS (

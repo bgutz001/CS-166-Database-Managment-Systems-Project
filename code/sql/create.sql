@@ -12,7 +12,7 @@ DROP DOMAIN IF EXISTS _SCORE CASCADE;
 
 -- CREATE DOMAINS
 CREATE DOMAIN _YEAR AS int4 CHECK(VALUE >= 1900);--YEAR ONLY GREATER THAN 1900
-CREATE DOMAIN _HOURS AS int4 CHECK(VALUE > 0 AND VALUE < 24);--At most 24 hours duration
+CREATE DOMAIN _HOURS AS int4 CHECK(VALUE > 0 AND VALUE <= 24);--At most 24 hours duration
 CREATE DOMAIN _SEATS AS int4 CHECK(VALUE > 0 AND VALUE < 500);--Plane Seats
 CREATE DOMAIN _SCORE AS int4 CHECK(VALUE >= 0 AND VALUE <= 5);--Zero to five stars rating
 
@@ -56,8 +56,8 @@ CREATE TABLE Ratings(
 	comment TEXT,
 	PRIMARY KEY (rID),
 	FOREIGN KEY (pID) REFERENCES Passenger(pID),
-	FOREIGN KEY (flightNum) REFERENCES Flight(flightNum),
-	UNIQUE (pID, flightNum) -- A Passenger can only leave one rating per flight
+	FOREIGN KEY (flightNum) REFERENCES Flight(flightNum)
+	--, UNIQUE (pID, flightNum) -- A Passenger can only leave one rating per flight
 );
 
 CREATE TABLE Booking(

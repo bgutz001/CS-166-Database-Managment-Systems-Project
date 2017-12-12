@@ -301,6 +301,8 @@ public class AirBooking{
     }//end readChoice
 	
 
+    // TODO in all of the functions. when inputing a string, the query will break if there is a '. Fix this somehow
+
     public static void AddPassenger(AirBooking esql){//1
 	//Add a new passenger to the database
 	String sql = null;
@@ -322,6 +324,9 @@ public class AirBooking{
 		    if (!TryAgain()) return;
 		    else continue;
 		}
+		// passNum = URLEncoder.encode(passNum, "UTF-8");
+		// The above line will eliminate errors when user inputs '
+		// Should use prepared statements instead
 		
 		} catch (Exception e) {
 		    System.out.println("Invalid input!");
@@ -409,6 +414,7 @@ public class AirBooking{
 	    esql.executeUpdate(sql);
 	} catch (Exception e) {
 	    System.out.println("Insertion failed! Please try again.");
+	    System.err.println(e.getMessage());
 	}
     }
 	
@@ -457,6 +463,12 @@ public class AirBooking{
 
 	    try {
 		passport = in.readLine();
+		if (passport.length() > 10) {
+		    System.out.println("Invalid passport number.");
+		    if (!TryAgain()) return;
+		    else continue;
+		}
+
 	    } catch (Exception e) {
 		System.out.println("Invalid input!");
 		if (!TryAgain()) return;
@@ -509,6 +521,12 @@ public class AirBooking{
 		    System.out.print("Enter the origin: ");
 		    try {
 			origin = in.readLine();
+			if (origin.length() > 16) {
+			    System.out.println("Invalid origin.");
+			    if (!TryAgain()) return;
+			    else continue;
+			}
+
 			break;
 		    } catch (Exception e) {
 			System.out.println("Invalid input.");
@@ -522,6 +540,12 @@ public class AirBooking{
 		    System.out.print("Enter the destination: ");
 		    try {
 			destination = in.readLine();
+			if (destination.length() > 16) {
+			    System.out.println("Invalid destination.");
+			    if (!TryAgain()) return;
+			    else continue;
+			}
+
 			break;
 		    } catch (Exception e) {
 			System.out.println("Invalid input.");
@@ -622,6 +646,12 @@ public class AirBooking{
 
 		try {
 		    passport = in.readLine();
+		    if (passport.length() > 10) {
+			System.out.println("Invalid passport number.");
+			if (!TryAgain()) return;
+			else continue;
+		    }
+
 		} catch (Exception e) {
 		    System.out.println("Invalid input!");
 		    if (!TryAgain()) return;
@@ -656,7 +686,12 @@ public class AirBooking{
 		System.out.print("Enter the flight number: ");
 		try {
 		    flightNum = in.readLine();
-		    
+		    if (flightNum.length() > 8) {
+			System.out.println("Invalid flight number.");
+			if (!TryAgain()) return;
+			else continue;
+		    }
+
 		    // Check if flight number exists
 		    String sqlflightNum = String.format("SELECT * FROM Flight WHERE flightNum = '%s';", flightNum);
 		    result = esql.executeQuery(sqlflightNum);
@@ -766,10 +801,11 @@ public class AirBooking{
 	int seat = 0;
 	int duration = 0;
 	
-
+	
 	do {
-	    // Get the airline id TODO change to airline name
+	    // Get the Airline Id
 	    do {
+		// TODO maybe there is another way to get the Airline ID. User won't know it
 		System.out.print("Enter the Airline ID: ");
 
 		try {
@@ -799,30 +835,21 @@ public class AirBooking{
 		}
 	    } while (true);
 
-	    // Build flight number
+	    // Get the flight number
 	    do {
-		String CHARS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890";
-
-		StringBuilder randstring = new StringBuilder();
-		Random rnd = new Random();
-
-		while (randstring.length() < 6) { // length of the random string.
-		    int index = (int) (rnd.nextFloat() * CHARS.length());
-		    randstring.append(CHARS.charAt(index));
-		}
-	
-		flightNum = randstring.toString();
-
-		// Check flight number doesn't already exist
-		String sqlref = String.format("SELECT * FROM Flight F WHERE F.flightNum ='%s';", flightNum);
+		System.out.print("Enter the flight number: ");
 		try {
-		    result = esql.executeQuery(sqlref);
-		
-		    if (result == 0) {
-			break;
+		    flightNum = in.readLine();
+		    if (flightNum.length() > 8) {
+			System.out.println("Invalid flight number.");
+			if (!TryAgain()) return;
+			else continue;
 		    }
-		} catch(Exception e) {
-		    System.out.println("Something wrong");
+		    break;
+		} catch (Exception e) {
+		    System.out.println("Invalid input.");
+		    if (!TryAgain()) return;
+		    else continue;
 		}
 	    } while(true);
 
@@ -832,9 +859,16 @@ public class AirBooking{
 		System.out.print("Enter the origin: ");
 		try {
 		    origin = in.readLine();
+		    if (origin.length() > 16) {
+			System.out.println("Invalid origin.");
+			if (!TryAgain()) return;
+			else continue;
+		    }
 		    break;
 		} catch (Exception e) {
 		    System.out.println("Invalid input.");
+		    if (!TryAgain()) return;
+		    else continue;
 		}
 	    } while (true);
 		   
@@ -843,9 +877,16 @@ public class AirBooking{
 		System.out.print("Enter the destination: ");
 		try {
 		    destination = in.readLine();
+		    if (destination.length() > 16) {
+			System.out.println("Invalid destination.");
+			if (!TryAgain()) return;
+			else continue;
+		    }
 		    break;
 		} catch (Exception e) {
 		    System.out.println("Invalid input.");
+		    if (!TryAgain()) return;
+		    else continue;
 		}
 	    } while (true);
 	
@@ -854,9 +895,16 @@ public class AirBooking{
 		System.out.print("Enter the plane: ");
 		try {
 		    plane = in.readLine();
+		    if (plane.length() > 16) {
+			System.out.println("Invalid plane.");
+			if (!TryAgain()) return;
+			else continue;
+		    }
 		    break;
 		} catch (Exception e) {
 		    System.out.println("Invalid input.");
+		    if (!TryAgain()) return;
+		    else continue;
 		}
 	    } while (true);
 
@@ -865,9 +913,16 @@ public class AirBooking{
 		System.out.print("Enter the seat number: ");
 		try {
 		    seat = Integer.parseInt(in.readLine());
+		    if (seat >= 500 || seat <= 0) {
+			System.out.println("Seat count must be between 0 and 500.");
+			if (!TryAgain()) return;
+			else continue;
+		    }
 		    break;
 		} catch (Exception e) {
 		    System.out.println("Invalid input. Please enter an integer.");
+		    if (!TryAgain()) return;
+		    else continue;
 		}
 	    } while (true);
 
@@ -876,45 +931,97 @@ public class AirBooking{
 		System.out.print("Enter the duration: ");
 		try {
 		    duration = Integer.parseInt(in.readLine());
+		    if (duration > 24 || duration <= 0) {
+			System.out.println("Duration must be between 0 and 25.");
+			if (!TryAgain()) return;
+			else continue;
+		    }
 		    break;
 		} catch (Exception e) {
 		    System.out.println("Invalid input. Please enter an integer.");
+		    if (!TryAgain()) return;
+		    else continue;
 		}
 	    } while (true);
 	
-	    try {
-		String sqlcheck = String.format("SELECT * FROM Flight F WHERE " +
-						"F.airID = '%d' AND F.flightNum = '%s' " +
-						"AND F.origin = '%s' AND F.destination = '%s' " +
-						"AND F.plane = '%s' AND F.seats = '%d' AND F.duration = '%d';",
-						airID, flightNum, origin, destination, plane, seat, duration);
-
-		result = esql.executeQuery(sqlcheck);
-
-		//System.out.println(airID);
-		//System.out.println(flightNum);
-		//System.out.println(origin);
-		//System.out.println(destination);
-		//System.out.println(plane);
-		//System.out.println(seat);
-		//System.out.println(duration);
-
-		if(result == 0) {
-		    String sql = String.format("INSERT INTO Flight (airId, flightNum, origin, destination, plane, seats, duration) VALUES ('%d','%s','%s','%s','%s', '%d','%d');",
-					       airID, flightNum, origin, destination, plane, seat, duration);
-
-		    esql.executeUpdate(sql);
+	    // Ask user if they want to update or insert
+	    int choice = 0;
+	    System.out.println("1. Insert this flight.");
+	    System.out.println("2. Update this flight.");
+	    do {
+		System.out.print("Choose 1 or 2: ");
+		try {
+		    choice = Integer.parseInt(in.readLine());
+		    if (choice != 1 && choice != 2) {
+			System.out.println("Invalid choice!");
+			if (!TryAgain()) return;
+			else continue;
+		    }
 		    break;
+		} catch (Exception e) {
+		    System.out.println("Invalid input!");
+		    if (!TryAgain()) return;
+		    else continue;
 		}
-		else {
-		    System.out.println("Flight already exists, try entering different input"); // tODO
-		}
+	    } while (true);
 
-	    } catch (Exception e) {
-		System.out.println("Insertion Failed.");
-		System.err.println(e.getMessage());
+	    if (choice == 1) { // Insert
+		try {
+		    // Check if flight already exists
+		    String sqlcheck = String.format("SELECT * " +
+						    "FROM Flight F " +
+						    "WHERE F.flightNum='%s';",
+						    flightNum);
+		    result = esql.executeQuery(sqlcheck);
+
+		    if(result == 0) { // Flight doesn't exist
+			String sql = String.format("INSERT INTO Flight (airId, flightNum, origin, destination, plane, seats, duration) " +
+						   "VALUES ('%d','%s','%s','%s','%s', '%d','%d');",
+						   airID, flightNum, origin, destination, plane, seat, duration);
+			esql.executeUpdate(sql);
+			return;
+		    }
+		    else {
+			System.out.println("Flight already exists, try entering different input.");
+			if(!TryAgain()) return;
+			else continue;
+		    }
+
+		} catch (Exception e) {
+		    System.out.println("Something went wrong.");
+		    System.err.println(e.getMessage());
+		    return;
+		}
 	    }
-	
+	    else if (choice == 2) { // Update
+		try {
+		    // Check if flight already exists
+		    String sqlcheck = String.format("SELECT * " +
+						    "FROM Flight F " +
+						    "WHERE F.flightNum='%s';",
+						    flightNum);
+		    result = esql.executeQuery(sqlcheck);
+
+		    if(result != 0) { // Flight exists
+			String sql = String.format("UPDATE Flight " +
+						   "SET airId='%d', origin='%s', destination='%s', plane='%s', seats='%d', duration='%d' " +
+						   "WHERE flightNum='%s';",
+						   airID, origin, destination, plane, seat, duration, flightNum);
+			esql.executeUpdate(sql);
+			return;
+		    }
+		    else {
+			System.out.println("Flight doesn't exist.");
+			if(!TryAgain()) return;
+			else continue;
+		    }
+
+		} catch (Exception e) {
+		    System.out.println("Something went wrong.");
+		    System.err.println(e.getMessage());
+		    return;
+		}
+	    }
          } while(true);
     }
 	
@@ -930,6 +1037,11 @@ public class AirBooking{
 	    System.out.print("Enter the origin: ");
 	    try {
 		origin = in.readLine();
+		if (origin.length() > 16) {
+		    System.out.println("Invalid origin.");
+		    if (!TryAgain()) return;
+		    else continue;
+		}
 		break;
 	    } catch (Exception e) {
 		System.out.println("Invalid input.");
@@ -943,6 +1055,11 @@ public class AirBooking{
 	    System.out.print("Enter the destination: ");
 	    try {
 		destination = in.readLine();
+		if (destination.length() > 16) {
+		    System.out.println("Invalid destination.");
+		    if (!TryAgain()) return;
+		    else continue;
+		}
 		break;
 	    } catch (Exception e) {
 		System.out.println("Invalid input.");
@@ -1117,6 +1234,11 @@ public class AirBooking{
 	    System.out.print("Enter the origin: ");
 	    try {
 		origin = in.readLine();
+		if (origin.length() > 16) {
+		    System.out.println("Invalid origin.");
+		    if (!TryAgain()) return;
+		    else continue;
+		}
 		break;
 	    } catch (Exception e) {
 		System.out.println("Invalid input!");
@@ -1130,6 +1252,11 @@ public class AirBooking{
 	    System.out.print("Enter the destination: ");
 	    try {
 		destination = in.readLine();
+		if (destination.length() > 16) {
+		    System.out.println("Invalid destination.");
+		    if (!TryAgain()) return;
+		    else continue;
+		}
 		break;
 	    } catch (Exception e) {
 		System.out.println("Invalid input!");
@@ -1185,6 +1312,12 @@ public class AirBooking{
 	    System.out.print("Enter the flight number: ");
 	    try {
 		flightNum = in.readLine();
+		if (flightNum.length() > 8) {
+		    System.out.println("Invalid flight number.");
+		    if (!TryAgain()) return;
+		    else continue;
+		}
+
 		// Check if flight number exists
 		String sqlflightNum = String.format("SELECT * FROM Flight WHERE flightNum = '%s';", flightNum);
 		result = esql.executeQuery(sqlflightNum);
