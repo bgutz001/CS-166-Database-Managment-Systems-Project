@@ -660,6 +660,156 @@ public class AirBooking{
 	
     public static void InsertOrUpdateRouteForAirline(AirBooking esql){//4
 	//Insert a new route for the airline
+	    
+	//Add a new passenger to the database
+	int result = 0;
+	int airID = 0;
+	String flightNum = null;
+	String origin = null;
+	String destination = null;
+	String plane = null;
+	int seat = 0;
+	int duration = 0;
+	
+
+	do {
+	
+	    // Get the passport number
+	    do {
+		System.out.print("Enter the Airline ID: ");
+		try {
+		    airID = Integer.parseInt(in.readLine());
+
+		    // Check if airline  exists
+		    String sqlairid = String.format("SELECT * FROM Airline A WHERE A.airId='%d';", airID);
+		    result = esql.executeQuery(sqlairid);
+		    if (result == 0) { // passport already exists
+			System.out.println("The airline does not exit, please enter a different airline id");
+		    }
+		    else { 
+			break;
+		    } 
+		} catch (Exception e) {
+		    System.out.println("Shouldn't see this"); // TODO error message
+		}
+	    } while (true);
+
+	    do {
+
+		String CHARS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890";
+
+		StringBuilder randstring = new StringBuilder();
+		Random rnd = new Random();
+
+		while (randstring.length() < 6) { // length of the random string.
+		    int index = (int) (rnd.nextFloat() * CHARS.length());
+		    randstring.append(CHARS.charAt(index));
+		}
+	
+		flightNum = randstring.toString();
+
+		String sqlref = String.format("SELECT * FROM Flight F WHERE F.flightNum ='%s';", flightNum);
+		try {
+		    result = esql.executeQuery(sqlref);
+		
+		    if (result == 0) {
+			break;
+		    }
+		} catch(Exception e) {
+		    System.out.println("Something wrong");
+		}
+
+	    } while(true);
+
+	 
+	    // Get the origin
+	    do {
+		System.out.print("Enter the origin: ");
+		try {
+		    origin = in.readLine();
+		    break;
+		} catch (Exception e) {
+		    System.out.println("Invalid input."); // TODO
+		}
+	    } while (true);
+		   
+	    // Get the destination
+	    do {
+		System.out.print("Enter the destination: ");
+		try {
+		    destination = in.readLine();
+		    break;
+		} catch (Exception e) {
+		    System.out.println("Invalid input."); // TODO
+		}
+	    } while (true);
+	
+	    // Get the plane
+	    do {
+		System.out.print("Enter the plane: ");
+		try {
+		    plane = in.readLine();
+		    break;
+		} catch (Exception e) {
+		    System.out.println("Invalid input."); // TODO
+		}
+	    } while (true);
+
+	    // Get the seat number
+	    do {
+		System.out.print("Enter the seat number: ");
+		try {
+		    seat = Integer.parseInt(in.readLine());
+		    break;
+		} catch (Exception e) {
+		    System.out.println("Invalid input."); // TODO
+		}
+	    } while (true);
+
+	    // Get the duration
+	    do {
+		System.out.print("Enter the duration: ");
+		try {
+		    duration = Integer.parseInt(in.readLine());
+		    break;
+		} catch (Exception e) {
+		    System.out.println("Invalid input."); // TODO
+		}
+	    } while (true);
+	
+	    try {
+		String sqlcheck = String.format("SELECT * FROM Flight F WHERE " +
+						"F.airID = '%d' AND F.flightNum = '%s' " +
+						"AND F.origin = '%s' AND F.destination = '%s' " +
+						"AND F.plane = '%s' AND F.seats = '%d' AND F.duration = '%d';",
+						airID, flightNum, origin, destination, plane, seat, duration);
+
+		result = esql.executeQuery(sqlcheck);
+
+		//System.out.println(airID);
+		//System.out.println(flightNum);
+		//System.out.println(origin);
+		//System.out.println(destination);
+		//System.out.println(plane);
+		//System.out.println(seat);
+		//System.out.println(duration);
+
+		if(result == 0) {
+		    String sql = String.format("INSERT INTO Flight (airId, flightNum, origin, destination, plane, seats, duration) VALUES ('%d','%s','%s','%s','%s',%d','%d');",
+					       airID, flightNum, origin, destination, plane, seat, duration);
+
+		    esql.executeUpdate(sql);
+		    break;
+		}
+		else {
+		    System.out.println("flight already exists, try entering different input");
+		}
+
+	    } catch (Exception e) {
+		System.out.println("insertion failed");
+	    }
+	
+         } while(true);
     }
 	
     // TODO check that origin/destination exist?
