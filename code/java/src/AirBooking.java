@@ -428,6 +428,7 @@ public class AirBooking{
 	Date date = null;
 	String bookRef = null;
 	String passport = null;
+	String flightNum = null;
 
 	// Build bookRef
 	do {
@@ -463,12 +464,6 @@ public class AirBooking{
 
 	    try {
 		passport = in.readLine();
-		if (passport.length() > 10) {
-		    System.out.println("Invalid passport number.");
-		    if (!TryAgain()) return;
-		    else continue;
-		}
-
 	    } catch (Exception e) {
 		System.out.println("Invalid input!");
 		if (!TryAgain()) return;
@@ -521,12 +516,6 @@ public class AirBooking{
 		    System.out.print("Enter the origin: ");
 		    try {
 			origin = in.readLine();
-			if (origin.length() > 16) {
-			    System.out.println("Invalid origin.");
-			    if (!TryAgain()) return;
-			    else continue;
-			}
-
 			break;
 		    } catch (Exception e) {
 			System.out.println("Invalid input.");
@@ -540,12 +529,6 @@ public class AirBooking{
 		    System.out.print("Enter the destination: ");
 		    try {
 			destination = in.readLine();
-			if (destination.length() > 16) {
-			    System.out.println("Invalid destination.");
-			    if (!TryAgain()) return;
-			    else continue;
-			}
-
 			break;
 		    } catch (Exception e) {
 			System.out.println("Invalid input.");
@@ -556,31 +539,85 @@ public class AirBooking{
 		
 		try {
 		    // Check if a flight between origin and destination exists
-		    String sqlflight = String.format("SELECT * FROM Flight F " +
+		    String sqlflightNum = String.format("SELECT * FROM Flight F " +
 						     "WHERE F.origin = '%s' AND F.destination = '%s';", origin, destination);
-		    List<List<String>> flights = esql.executeQueryAndReturnResult(sqlflight);
+		    
+		    List<List<String>> flights = esql.executeQueryAndReturnResult(sqlflightNum);
 
 		    // TODO can me multiple flights. Let user pick flightnum
 
 		    if (flights.size() != 0) { // Flight exists
 			// Check if seats are available on the date
+
+			if(flights.size() > 0) {
+			     System.out.println(String.format("%-17s%-17s%-15s%-15s",
+					     "FlightNum", "Origin", "Destination",  "Total Seats"));
+			     System.out.println("-------------------------------------------------------");
+
+			     for (int i = 0; i < flights.size(); ++i) {
+				 System.out.print(String.format("%-17s", flights.get(i).get(1))); // flightnum
+				 System.out.print(String.format("%-17s", flights.get(i).get(2))); // origin
+				 System.out.print(String.format("%-15s", flights.get(i).get(3))); // destination
+				 System.out.print(String.format("%-15s", flights.get(i).get(5))); // Total Seats
+				 System.out.print("\n");
+				 System.out.println();
+			     }
+			     
+			     // Get the flightnum
+			     do {
+				 System.out.print("Enter the flight number for the flight that you want: ");
+				 try {
+				     try {
+					 flightNum  = in.readLine();
+					 // Check that the flight number isn't too long
+					 if (flightNum.length() > 6) {
+					     System.out.println("The flight number is too long!");
+					     if (!TryAgain()) return;
+					     else continue;
+					 }
+		
+				     } catch (Exception e) {
+					 System.out.println("Invalid input!");
+					 if (!TryAgain()) return;
+					 else continue;
+				     }
+
+				     // Check if flightnum exists
+				     String sqlflight = String.format("SELECT * FROM Flight F WHERE F.flightNum='%s';", flightNum);
+				     result = esql.executeQuery(sqlflight);
+				     if (result == 0) {
+					 System.out.println("The flight number does not exist, try again!");
+					 if(!TryAgain()) return;
+					 else continue;
+				     }
+				     else {
+					 break;
+				     } 
+				 } catch (Exception e) {
+				     System.out.println("Sorry, something went wrong.");
+				     System.err.println(e.getMessage());
+				 }
+			     } while (true);
+			     
+			}
+
 			String sqlbook = String.format("SELECT F.flightNum, F.seats, F.seats-COUNT(*) " +
 						       "FROM Flight F, Booking B " +
-						       "WHERE F.flightNum=B.flightNum AND F.origin='%s' AND F.destination='%s' AND B.departure='%s' " +
-						       "GROUP BY F.flightNum, F.origin, F.destination, B.departure, F.seats;", origin, destination, date.toString());	
+						       "WHERE F.flightNum=B.flightNum AND F.flightNum='%s' AND B.departure='%s' " +
+						       "GROUP BY F.flightNum, F.origin, F.destination, B.departure, F.seats;", flightNum, date.toString());	
 			List<List<String>> seat = esql.executeQueryAndReturnResult(sqlbook);
 				
 			if (seat.size() == 0 ) { // No seats taken
 			    // Check if passenger already booked flight
 			    String sqlbookcheck = String.format("SELECT * FROM Booking B WHERE B.departure='%s' AND B.flightNum='%s' AND B.pID='%s';"
-								,date.toString(),flights.get(0).get(1),pID);
+								,date.toString(),flightNum,pID);
 			    result = esql.executeQuery(sqlbookcheck);
 
 			    if (result == 0) { // didn't book
 				String sqlbookflight = String.format("INSERT INTO Booking (bookRef, departure, flightNum, pID) VALUES ('%s', '%s', '%s', '%d');",
-								     bookRef, date.toString(), flights.get(0).get(1), pID);
+								     bookRef, date.toString(), flightNum, pID);
 				esql.executeUpdate(sqlbookflight);
-				System.out.println(String.format("Booked flight '%s'.", flights.get(0).get(1))); // TODO
+				System.out.println(String.format("Booked flight '%s'.", flightNum)); // TODO
 				return;
 			    } 
 			    else { // already booked
@@ -592,14 +629,14 @@ public class AirBooking{
 			else if (Integer.parseInt(seat.get(0).get(2)) > 0) { // Seats available
 			    // Check if passenger already booked flight
 			    String sqlbookcheck = String.format("SELECT * FROM Booking B WHERE B.departure='%s' AND B.flightNum='%s' AND B.pID='%s';"
-								,date.toString(),seat.get(0).get(0),pID);
+								,date.toString(),flightNum,pID);
 			    result = esql.executeQuery(sqlbookcheck);
 
 			    if (result == 0) {
 				String sqlbookflight = String.format("INSERT INTO Booking (bookRef, departure, flightNum, pID) VALUES ('%s', '%s', '%s', '%d');",
-								     bookRef, date.toString(), seat.get(0).get(0), pID);
+								     bookRef, date.toString(), flightNum, pID);
 				esql.executeUpdate(sqlbookflight);
-				System.out.println(String.format("Booked flight '%s'.", seat.get(0).get(0))); // TODO
+				System.out.println(String.format("Booked flight '%s'.", flightNum)); // TODO
 				return;
 			    } 
 			    else {
