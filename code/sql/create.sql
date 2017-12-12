@@ -56,7 +56,8 @@ CREATE TABLE Ratings(
 	comment TEXT,
 	PRIMARY KEY (rID),
 	FOREIGN KEY (pID) REFERENCES Passenger(pID),
-	FOREIGN KEY (flightNum) REFERENCES Flight(flightNum)
+	FOREIGN KEY (flightNum) REFERENCES Flight(flightNum),
+	UNIQUE (pID, flightNum) -- A Passenger can only leave one rating per flight
 );
 
 CREATE TABLE Booking(
@@ -174,5 +175,21 @@ EXECUTE PROCEDURE ratings_insert();
 
 --GRANT USER PRIVELEGES TO ACCESS THE SEQUENCE
 GRANT ALL PRIVILEGES ON SEQUENCE pIDseq TO bgutz;
-GRANT ALL PRIVILEGES ON SEQUENCE bookRefseq TO bgutz;
 GRANT ALL PRIVILEGES ON SEQUENCE rIDseq TO bgutz;
+
+
+--Create Indexes
+CREATE INDEX flightIndex on Flight
+USING btree
+(flightNum)
+;
+
+CREATE INDEX ratingsIndex on Ratings
+USING btree
+(flightNum)
+;
+
+CREATE INDEX bookingIndex on Booking
+USING btree
+(flightNum)
+;
