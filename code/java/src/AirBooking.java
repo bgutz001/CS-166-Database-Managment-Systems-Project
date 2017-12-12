@@ -334,6 +334,8 @@ public class AirBooking{
 		result = esql.executeQuery(sqlpassNum);
 		if (result != 0) { // passport already exists
 		    System.out.println("The passport number is already in use by a passenger!");
+		    if(!TryAgain()) return;
+		    else continue;
 		}
 		else { // passport doesn't exist
 		    break;
@@ -412,16 +414,17 @@ public class AirBooking{
 	
     public static void BookFlight(AirBooking esql){//2
 	//Book Flight for an existing customer
-	//Book Flight for an existing customer
+
 	int pID = 0;
 	String origin = null;
 	String destination = null;
 	int result = 0;
 	Date date = null;
 	String bookRef = null;
-	
-	do {
+	String passport = null;
 
+	// Build bookRef
+	do {
 	    String CHARS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890";
 
 	    StringBuilder randstring = new StringBuilder();
@@ -443,48 +446,64 @@ public class AirBooking{
 		}
 	    } catch(Exception e) {
 		System.out.println("Something wrong");
+		System.err.println(e.getMessage());
+	    }
+	} while(true);
+
+
+	// Get the passport number, then passeneger id
+	do {
+	    System.out.print("Enter the passenger's passport number: ");
+
+	    try {
+		passport = in.readLine();
+	    } catch (Exception e) {
+		System.out.println("Invalid input!");
+		if (!TryAgain()) return;
+		else continue;
 	    }
 
-	} while(true);
+	    try {
+		// Check if passport number exists
+		String sqlpassNum = String.format("SELECT pID FROM Passenger WHERE passNum='%s';", passport);
+		result = esql.executeQuery(sqlpassNum);
+		if (result == 0) { // passport doesn't exist
+		    System.out.println("A passenger with that passport number can not be found.");
+		    if (!TryAgain()) return;
+		    else continue;
+		}
+		else { // passport exists
+		    // Get the pid associated with the passport number
+		    List<List<String>> pIDS = esql.executeQueryAndReturnResult(sqlpassNum);
+		    pID = Integer.parseInt(pIDS.get(0).get(0));
+		    break;
+		} 
+	    } catch (Exception e) {
+		System.out.println("Sorry, something went wrong.");
+		System.err.println(e.getMessage());
+		return;
+	    }
+	} while (true);
 
 	do {
 
-	    // Get passenger id
+	    // Get date
 	    do {
-		System.out.print("Enter the passenger's ID: ");
+		System.out.print("Enter the flight's date <YYYY-MM-DD>: ");
 		try {
-		    pID = Integer.parseInt(in.readLine());
-
-		    // Check if passenger exists
-		    String sqlpID = String.format("SELECT * FROM Passenger WHERE pID = '%d';", pID);
-		    result = esql.executeQuery(sqlpID);
-		    if (result == 0) { // passenger doesn't exist
-			System.out.println("Passenger doesn't exist, please enter a valid pID.");
-		    }
-		    else { // passenger exists
-			break;
-		    }
-		} catch (Exception e) { // IOexception or SQLexception
-		    System.out.println("Invalid input, please enter an integer.");
+		    date = Date.valueOf(in.readLine());
+		    // Date is valid
+		    break;
+		}
+		catch (Exception e) {
+		    System.out.println("Please enter a valid date. Use YYYY-MM-DD.");
+		    if (!TryAgain()) return;
+		    else continue;
 		}
 	    } while (true);
-    
+
+
 	    do {
-    	
-		// Get date
-		do {
-		    System.out.print("Enter the flight's date <YYYY-MM-DD>: ");
-		    try {
-			date = Date.valueOf(in.readLine());
-			// Date is valid
-			break;
-		    }
-		    catch (Exception e) {
-			System.out.println("Please enter a valid date. Use YYYY-MM-DD.");
-		    }
-		} while (true);
-		
-    
 		// Get the origin
 		do {
 		    System.out.print("Enter the origin: ");
@@ -492,7 +511,9 @@ public class AirBooking{
 			origin = in.readLine();
 			break;
 		    } catch (Exception e) {
-			System.out.println("Invalid input."); // TODO
+			System.out.println("Invalid input.");
+			if (!TryAgain()) return;
+			else continue;
 		    }
 		} while (true);
 		   
@@ -503,67 +524,81 @@ public class AirBooking{
 			destination = in.readLine();
 			break;
 		    } catch (Exception e) {
-			System.out.println("Invalid input."); // TODO
+			System.out.println("Invalid input.");
+			if (!TryAgain()) return;
+			else continue;
 		    }
 		} while (true);
-	    
-		String sqlflight = String.format("SELECT * FROM Flight F " +
-						 "WHERE F.origin = '%s' AND F.destination = '%s';", origin, destination);
-			
-		String sqlbook = String.format("SELECT F.flightNum, F.seats, F.seats-COUNT(*) " +
-					       "FROM Flight F, Booking B " +
-					       "WHERE F.flightNum=B.flightNum AND F.origin='%s' AND F.destination='%s' AND B.departure='%s' " +
-					       "GROUP BY F.flightNum, F.origin, F.destination, B.departure, F.seats;", origin, destination, date.toString());	
-	    
+		
 		try {
+		    // Check if a flight between origin and destination exists
+		    String sqlflight = String.format("SELECT * FROM Flight F " +
+						     "WHERE F.origin = '%s' AND F.destination = '%s';", origin, destination);
 		    List<List<String>> flights = esql.executeQueryAndReturnResult(sqlflight);
 
-		    if (flights.size() != 0) { 
+		    // TODO can me multiple flights. Let user pick flightnum
+
+		    if (flights.size() != 0) { // Flight exists
+			// Check if seats are available on the date
+			String sqlbook = String.format("SELECT F.flightNum, F.seats, F.seats-COUNT(*) " +
+						       "FROM Flight F, Booking B " +
+						       "WHERE F.flightNum=B.flightNum AND F.origin='%s' AND F.destination='%s' AND B.departure='%s' " +
+						       "GROUP BY F.flightNum, F.origin, F.destination, B.departure, F.seats;", origin, destination, date.toString());	
 			List<List<String>> seat = esql.executeQueryAndReturnResult(sqlbook);
 				
-			if (seat.size() == 0 ) {
+			if (seat.size() == 0 ) { // No seats taken
+			    // Check if passenger already booked flight
 			    String sqlbookcheck = String.format("SELECT * FROM Booking B WHERE B.departure='%s' AND B.flightNum='%s' AND B.pID='%s';"
 								,date.toString(),flights.get(0).get(1),pID);
-			 
-			    String sqlbookflight = String.format("INSERT INTO Booking (bookRef, departure, flightNum, pID) VALUES ('%s', '%s', '%s', '%d');",
-								 bookRef, date.toString(), flights.get(0).get(1), pID);
+			    result = esql.executeQuery(sqlbookcheck);
+
+			    if (result == 0) { // didn't book
+				String sqlbookflight = String.format("INSERT INTO Booking (bookRef, departure, flightNum, pID) VALUES ('%s', '%s', '%s', '%d');",
+								     bookRef, date.toString(), flights.get(0).get(1), pID);
+				esql.executeUpdate(sqlbookflight);
+				System.out.println(String.format("Booked flight '%s'.", flights.get(0).get(1))); // TODO
+				return;
+			    } 
+			    else { // already booked
+				System.out.println("Flight is already booked for that passenger at that date");
+				if (!TryAgain()) return;
+				else break;
+			    }
+			}
+			else if (Integer.parseInt(seat.get(0).get(2)) > 0) { // Seats available
+			    // Check if passenger already booked flight
+			    String sqlbookcheck = String.format("SELECT * FROM Booking B WHERE B.departure='%s' AND B.flightNum='%s' AND B.pID='%s';"
+								,date.toString(),seat.get(0).get(0),pID);
 			    result = esql.executeQuery(sqlbookcheck);
 
 			    if (result == 0) {
+				String sqlbookflight = String.format("INSERT INTO Booking (bookRef, departure, flightNum, pID) VALUES ('%s', '%s', '%s', '%d');",
+								     bookRef, date.toString(), seat.get(0).get(0), pID);
 				esql.executeUpdate(sqlbookflight);
+				System.out.println(String.format("Booked flight '%s'.", seat.get(0).get(0))); // TODO
 				return;
 			    } 
 			    else {
 				System.out.println("Flight is already booked for that passenger at that date");
-				break;
+				if (!TryAgain()) return;
+				else break;
 			    }
 			}
-			else if (Integer.parseInt(seat.get(0).get(2)) > 0) {
-			    String sqlbookcheck = String.format("SELECT * FROM Booking B WHERE B.departure='%s' AND B.flightNum='%s' AND B.pID='%s';"
-								,date.toString(),seat.get(0).get(0),pID);
-
-			    String sqlbookflight = String.format("INSERT INTO Booking (bookRef, departure, flightNum, pID) VALUES ('%s', '%s', '%s', '%d');",
-								 bookRef, date.toString(), seat.get(0).get(0), pID);
-			    if (result == 0) {
-				esql.executeUpdate(sqlbookflight);
-				return;
-			    } 
-			    else {
-				System.out.println("Flight is already booked for that passenger at that date");
-				break;
-			    }
-			}
-			else {
+			else { // No seats available
 			    System.out.println("No available seats, please enter a differnt departure, origin, or destination");
+			    if(!TryAgain()) return;
+			    else break;
 			}
-				
-				
 		    }
-		    else { // passenger doesn't exist
-		    	System.out.println("Flight does not exist, please enter a different origin and destination");
+		    else { // Flight doesn't exist
+		    	System.out.println("Flight does not exist.");
+			if (!TryAgain()) return;
+			else continue;
 		    }
 		} catch (Exception e) {
 		    System.out.println("Sorry, something went wrong.");
+		    System.err.println(e.getMessage());
+		    return;
 		}
 	    } while (true);
 	}while(true);
@@ -581,17 +616,26 @@ public class AirBooking{
 
 	// Get passenger and flight pair
 	do {
-	    // Get the passport number, the passeneger id
+	    // Get the passport number, then passeneger id
 	    do {
 		System.out.print("Enter the passenger's passport number: ");
+
 		try {
 		    passport = in.readLine();
+		} catch (Exception e) {
+		    System.out.println("Invalid input!");
+		    if (!TryAgain()) return;
+		    else continue;
+		}
 
+		try {
 		    // Check if passport number exists
 		    String sqlpassNum = String.format("SELECT pID FROM Passenger WHERE passNum='%s';", passport);
 		    result = esql.executeQuery(sqlpassNum);
 		    if (result == 0) { // passport doesn't exist
 			System.out.println("A passenger with that passport number can not be found.");
+			if (!TryAgain()) return;
+			else continue;
 		    }
 		    else { // passport exists
 			// Get the pid associated with the passport number
@@ -602,6 +646,7 @@ public class AirBooking{
 		} catch (Exception e) {
 		    System.out.println("Sorry, something went wrong.");
 		    System.err.println(e.getMessage());
+		    return;
 		}
 	    } while (true);
 
@@ -616,13 +661,17 @@ public class AirBooking{
 		    String sqlflightNum = String.format("SELECT * FROM Flight WHERE flightNum = '%s';", flightNum);
 		    result = esql.executeQuery(sqlflightNum);
 		    if (result == 0) { // flight number doesn't exist
-			System.out.println("Flight doesn't exist, please enter a valid flight number.");
+			System.out.println(String.format("Flight '%s' doesn't exist.", flightNum));
+			if (!TryAgain()) return;
+			else continue;
 		    }
 		    else { // flight number exists
 			break;
 		    }
 		} catch (Exception e) {
-		    System.out.println("Invalid input."); // TODO error message
+		    System.out.println("Invalid input.");
+		    if (!TryAgain()) return;
+		    else continue;
 		}
 	    } while (true);
 
@@ -631,8 +680,9 @@ public class AirBooking{
 		String sqlbooking = String.format("SELECT * FROM Booking WHERE flightNum='%s' AND pID='%d';", flightNum, pID);
 		result = esql.executeQuery(sqlbooking);
 		if (result == 0) { // booking doesn't exist
-		    System.out.println("Booking doesn't exist, please enter a passenger that booked the flight.");
-		    continue;
+		    System.out.println(String.format("Passenger with passport '%s' never booked flight '%s'.", passport, flightNum));
+		    if (!TryAgain()) return;
+		    else continue;
 		}
 	    } catch (Exception e) {
 		System.out.println("Sorry, something went wrong.");
@@ -644,11 +694,14 @@ public class AirBooking{
 		String sqlrating = String.format("SELECT * FROM Ratings WHERE flightnum='%s' AND pID='%d'", flightNum, pID);
 		result = esql.executeQuery(sqlrating);
 		if (result != 0) { // rating exists
-		    System.out.println("Passenger already left a rating for this flight, please enter a flight and passenger that hasn't already left a rating");
-		    continue;
+		    System.out.println("Passenger already left a rating for this flight.");
+		    if (!TryAgain()) return;
+		    else continue;
 		}
 	    } catch (Exception e) {
-		System.out.println("Shouldn't see this"); // TODO error message
+		System.out.println("Sorry, something went wrong.");
+		System.err.println(e.getMessage());
+		return;
 	    }
 
 	    break;
@@ -664,12 +717,16 @@ public class AirBooking{
 		// Check if score is in valid range
 		if (score > 5 || score < 0) {
 		    System.out.print("Invalid range!");
+		    if (!TryAgain()) return;
+		    else continue;
 		}
 		else {
 		    break;
 		}
 	    } catch (Exception e) {
 		System.out.println("Invalid input, please enter an integer.");
+		if (!TryAgain()) return;
+		else continue;
 	    }
 	} while (true);
 		
@@ -680,7 +737,9 @@ public class AirBooking{
 		comment = in.readLine();
 		break;
 	    } catch (Exception e) {
-		System.out.println("Shouldn't see this"); // TODO error message
+		System.out.println("Invalid input!");
+		if (!TryAgain()) return;
+		else continue;
 	    }
 	} while (true);
 	 
@@ -690,7 +749,8 @@ public class AirBooking{
 	    esql.executeUpdate(sql);
 	} catch (Exception e) {
 	    System.out.println("Insertion failed! Please try again.");
-	    System.err.println(e.getMessage()); // TODO remove this; test this never happens
+	    System.err.println(e.getMessage());
+	    return;
 	}
     }
 	
@@ -711,20 +771,31 @@ public class AirBooking{
 	    // Get the airline id TODO change to airline name
 	    do {
 		System.out.print("Enter the Airline ID: ");
+
 		try {
 		    airID = Integer.parseInt(in.readLine());
+		} catch (Exception e) {
+		    System.out.println("Invalid input!");
+		    if (!TryAgain()) return;
+		    else continue;
+		}
 
+		try {
 		    // Check if airline  exists
 		    String sqlairid = String.format("SELECT * FROM Airline A WHERE A.airId='%d';", airID);
 		    result = esql.executeQuery(sqlairid);
 		    if (result == 0) { // airline already exists
 			System.out.println("The airline does not exist, please enter a different airline id.");
+			if (!TryAgain()) return;
+			else continue;
 		    }
 		    else { 
 			break;
 		    } 
 		} catch (Exception e) {
-		    System.out.println("Shouldn't see this"); // TODO error message
+		    System.out.println("Sorry, something went wrong.");
+		    System.err.println(e.getMessage());
+		    return;
 		}
 	    } while (true);
 
@@ -847,7 +918,6 @@ public class AirBooking{
          } while(true);
     }
 	
-    // TODO check that origin/destination exist?
     public static void ListAvailableFlightsBetweenOriginAndDestination(AirBooking esql) throws Exception{//5
 	//List all flights between origin and distination (i.e. flightNum,origin,destination,plane,duration) 
 	String sql = null;
@@ -862,7 +932,9 @@ public class AirBooking{
 		origin = in.readLine();
 		break;
 	    } catch (Exception e) {
-		System.out.println("Invalid input."); // TODO
+		System.out.println("Invalid input.");
+		if (!TryAgain()) return;
+		else continue;
 	    }
 	} while (true);
 	   
@@ -873,7 +945,9 @@ public class AirBooking{
 		destination = in.readLine();
 		break;
 	    } catch (Exception e) {
-		System.out.println("Invalid input."); // TODO
+		System.out.println("Invalid input.");
+		if (!TryAgain()) return;
+		else continue;
 	    }
 	} while (true);
 	
@@ -885,6 +959,7 @@ public class AirBooking{
 	} catch (Exception e) {
 	    System.out.println("Sorry, something went wrong.");
 	    System.err.println(e.getMessage());
+	    return;
 	}
 	
 	if (result == 0) {
@@ -904,12 +979,16 @@ public class AirBooking{
 		k = Integer.parseInt(in.readLine());
 		if (k <= 0) {
 		    System.out.println("Invalid range!");
+		    if (!TryAgain()) return;
+		    else continue;
 		}
 		else {
 		    break;
 		}
 	    } catch (Exception e) {
 		System.out.println("Invalid input, please enter an integer.");
+		if (!TryAgain()) return;
+		else continue;
 	    }
 	} while (true);
 
@@ -937,6 +1016,7 @@ public class AirBooking{
 	} catch (Exception e) {
 	    System.out.println("Sorry, something went wrong.");
 	    System.err.println(e.getMessage());
+	    return;
 	}
     }
 	
@@ -952,12 +1032,16 @@ public class AirBooking{
 		k = Integer.parseInt(in.readLine());
 		if (k <= 0) {
 		    System.out.println("Invalid range!");
+		    if (!TryAgain()) return;
+		    else continue;
 		}
 		else {
 		    break;
 		}
 	    } catch (Exception e) {
 		System.out.println("Invalid input, please enter an integer.");
+		if (!TryAgain()) return;
+		else continue;
 	    }
 	} while (true);
 
@@ -997,6 +1081,7 @@ public class AirBooking{
 	} catch (Exception e) {
 	    System.out.println("Sorry, something went wrong.");
 	    System.err.println(e.getMessage());
+	    return;
 	}
     }
 	
@@ -1014,12 +1099,16 @@ public class AirBooking{
 		k = Integer.parseInt(in.readLine());
 		if (k <= 0) {
 		    System.out.println("Invalid range!");
+		    if (!TryAgain()) return;
+		    else continue;
 		}
 		else {
 		    break;
 		}
 	    } catch (Exception e) {
 		System.out.println("Invalid input, please enter an integer.");
+		if (!TryAgain()) return;
+		else continue;
 	    }
 	} while (true);
 
@@ -1031,6 +1120,8 @@ public class AirBooking{
 		break;
 	    } catch (Exception e) {
 		System.out.println("Invalid input!");
+		if (!TryAgain()) return;
+		else continue;
 	    }
 	} while (true);
 	   
@@ -1042,6 +1133,8 @@ public class AirBooking{
 		break;
 	    } catch (Exception e) {
 		System.out.println("Invalid input!");
+		if (!TryAgain()) return;
+		else continue;
 	    }
 	} while (true);
 	
@@ -1076,6 +1169,7 @@ public class AirBooking{
 	} catch (Exception e) {
 	    System.out.println("Sorry, something went wrong.");
 	    System.err.println(e.getMessage());
+	    return;
 	}
     }
 	
@@ -1096,12 +1190,16 @@ public class AirBooking{
 		result = esql.executeQuery(sqlflightNum);
 		if (result == 0) { // flight number doesn't exist
 		    System.out.println("Flight doesn't exist, please enter a valid flight number.");
+		    if (!TryAgain()) return;
+		    else continue;
 		}
 		else { // flight number exists
 		    break;
 		}
 	    } catch (Exception e) {
 		System.out.println("Invlaid input!");
+		if (!TryAgain()) return;
+		else continue;
 	    }
 	} while (true);
 
@@ -1115,6 +1213,8 @@ public class AirBooking{
 	    }
 	    catch (Exception e) {
 		System.out.println("Please enter a valid date. Use YYYY-MM-DD.");
+		if (!TryAgain()) return;
+		else continue;
 	    }
 	} while (true);
 		
@@ -1161,6 +1261,7 @@ public class AirBooking{
 	} catch (Exception e) {
 	    System.out.println("Sorry, something went wrong.");
 	    System.err.println(e.getMessage());
+	    return;
 	}
     }
 
