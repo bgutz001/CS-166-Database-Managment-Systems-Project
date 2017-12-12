@@ -375,6 +375,166 @@ public class AirBooking{
 	
     public static void BookFlight(AirBooking esql){//2
 	//Book Flight for an existing customer
+	//Book Flight for an existing customer
+	int pID = 0;
+	String origin = null;
+	String destination = null;
+	int result = 0;
+	Date date = null;
+	String bookRef = null;
+	
+	do {
+
+	    String CHARS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890";
+
+	    StringBuilder randstring = new StringBuilder();
+	    Random rnd = new Random();
+
+	    while (randstring.length() < 10) { // length of the random string.
+		int index = (int) (rnd.nextFloat() * CHARS.length());
+		randstring.append(CHARS.charAt(index));
+	    }
+	
+	    bookRef = randstring.toString();
+
+	    String sqlref = String.format("SELECT * FROM Booking B WHERE B.bookRef ='%s';", bookRef);
+	    try {
+		result = esql.executeQuery(sqlref);
+		
+		if (result == 0) {
+		    break;
+		}
+	    } catch(Exception e) {
+		System.out.println("Something wrong");
+	    }
+
+	} while(true);
+
+	do {
+
+	    // Get passenger id
+	    do {
+		System.out.print("Enter the passenger's ID: ");
+		try {
+		    pID = Integer.parseInt(in.readLine());
+
+		    // Check if passenger exists
+		    String sqlpID = String.format("SELECT * FROM Passenger WHERE pID = '%d';", pID);
+		    result = esql.executeQuery(sqlpID);
+		    if (result == 0) { // passenger doesn't exist
+			System.out.println("Passenger doesn't exist, please enter a valid pID.");
+		    }
+		    else { // passenger exists
+			break;
+		    }
+		} catch (Exception e) { // IOexception or SQLexception
+		    System.out.println("Invalid input, please enter an integer.");
+		}
+	    } while (true);
+    
+	    do {
+    	
+		// Get date
+		do {
+		    System.out.print("Enter the flight's date <YYYY-MM-DD>: ");
+		    try {
+			date = Date.valueOf(in.readLine());
+			// Date is valid
+			break;
+		    }
+		    catch (Exception e) {
+			System.out.println("Please enter a valid date. Use YYYY-MM-DD.");
+		    }
+		} while (true);
+		
+    
+		// Get the origin
+		do {
+		    System.out.print("Enter the origin: ");
+		    try {
+			origin = in.readLine();
+			break;
+		    } catch (Exception e) {
+			System.out.println("Invalid input."); // TODO
+		    }
+		} while (true);
+		   
+		// Get the destination
+		do {
+		    System.out.print("Enter the destination: ");
+		    try {
+			destination = in.readLine();
+			break;
+		    } catch (Exception e) {
+			System.out.println("Invalid input."); // TODO
+		    }
+		} while (true);
+	    
+		String sqlflight = String.format("SELECT * FROM Flight F " +
+						 "WHERE F.origin = '%s' AND F.destination = '%s';", origin, destination);
+			
+		String sqlbook = String.format("SELECT F.flightNum, F.seats, F.seats-COUNT(*) " +
+					       "FROM Flight F, Booking B " +
+					       "WHERE F.flightNum=B.flightNum AND F.origin='%s' AND F.destination='%s' AND B.departure='%s' " +
+					       "GROUP BY F.flightNum, F.origin, F.destination, B.departure, F.seats;", origin, destination, date.toString());	
+	    
+		try {
+		    List<List<String>> flights = esql.executeQueryAndReturnResult(sqlflight);
+
+
+		    if (flights.size() != 0) { 
+
+
+
+			List<List<String>> seat = esql.executeQueryAndReturnResult(sqlbook);
+				
+			if (seat.size() == 0 ) {
+			 
+			    String sqlbookcheck = String.format("SELECT * FROM Booking B WHERE B.departure='%s' AND B.flightNum='%s' AND B.pID='%s';"
+								,date.toString(),flights.get(0).get(1),pID);
+			 
+			    String sqlbookflight = String.format("INSERT INTO Booking (bookRef, departure, flightNum, pID) VALUES ('%s', '%s', '%s', '%d');",
+								 bookRef, date.toString(), flights.get(0).get(1), pID);
+			    result = esql.executeQuery(sqlbookcheck);
+
+			    if (result == 0) {
+				esql.executeUpdate(sqlbookflight);
+				return;
+			    } 
+			    else {
+				System.out.println("Flight is already booked for that passenger at that date");
+				break;
+			    }
+			}
+			else if (Integer.parseInt(seat.get(0).get(2)) > 0) {
+			    String sqlbookcheck = String.format("SELECT * FROM Booking B WHERE B.departure='%s' AND B.flightNum='%s' AND B.pID='%s';"
+								,date.toString(),seat.get(0).get(0),pID);
+
+			    String sqlbookflight = String.format("INSERT INTO Booking (bookRef, departure, flightNum, pID) VALUES ('%s', '%s', '%s', '%d');",
+								 bookRef, date.toString(), seat.get(0).get(0), pID);
+			    if (result == 0) {
+				esql.executeUpdate(sqlbookflight);
+				return;
+			    } 
+			    else {
+				System.out.println("Flight is already booked for that passenger at that date");
+				break;
+			    }
+			}
+			else {
+			    System.out.println("No available seats, please enter a differnt departure, origin, or destination");
+			}
+				
+				
+		    }
+		    else { // passenger doesn't exist
+		    	System.out.println("Flight does not exist, please enter a different origin and destination");
+		    }
+		} catch (Exception e) {
+		    System.out.println("Sorry, something went wrong.");
+		}
+	    } while (true);
+	}while(true);
     }
 	
     public static void TakeCustomerReview(AirBooking esql){//3
@@ -549,6 +709,50 @@ public class AirBooking{
 	
     public static void ListMostPopularDestinations(AirBooking esql){//6
 	//Print the k most popular destinations based on the number of flights offered to them (i.e. destination, choices)
+	String sql = null;
+	int k = 10;
+
+	// Get k
+	do {
+	    System.out.print("Enter the number of destinations to list: ");
+	    try {
+		k = Integer.parseInt(in.readLine());
+		if (k <= 0) {
+		    System.out.println("Invalid range!");
+		}
+		else {
+		    break;
+		}
+	    } catch (Exception e) {
+		System.out.println("Invalid input, please enter an integer.");
+	    }
+	} while (true);
+
+	// List highest rated routes
+	try {	
+	    System.out.println(String.format("%-25s%-9s",
+						 "Destination", "Number of Flights"));
+	    System.out.println("-------------------------------------------");
+
+	    // Get list of most popular destinations based on number of flights to each one
+	    sql = String.format("SELECT F.destination, COUNT(*) " +
+				"FROM Flight F " + 
+				"GROUP BY F.destination " +
+				"ORDER BY COUNT(*) DESC;");
+
+	    List<List<String>> flights = esql.executeQueryAndReturnResult(sql);
+	    
+	    for (int i = 0; i < flights.size() && i < k; ++i) {
+
+		// Print result
+		System.out.print(String.format("%-25s", flights.get(i).get(0))); // destination
+		System.out.print(String.format("%-9s", flights.get(i).get(1))); // number of flight
+		System.out.println();
+	    }
+	} catch (Exception e) {
+	    System.out.println("Sorry, something went wrong.");
+	    System.err.println(e.getMessage());
+	}
     }
 	
     public static void ListHighestRatedRoutes(AirBooking esql){//7
