@@ -153,10 +153,6 @@ CREATE TRIGGER passenger_insert_t BEFORE INSERT
 ON Passenger FOR EACH ROW
 EXECUTE PROCEDURE passenger_insert();
 
-CREATE TRIGGER booking_insert_t BEFORE INSERT
-ON Booking FOR EACH ROW
-EXECUTE PROCEDURE booking_insert();
-
 --Create rID sequence
 DROP SEQUENCE IF EXISTS rIDseq;
 CREATE SEQUENCE rIDseq;
