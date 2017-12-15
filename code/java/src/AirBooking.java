@@ -324,6 +324,11 @@ public class AirBooking{
 		    if (!TryAgain()) return;
 		    else continue;
 		}
+		else if (!passNum.matches("[a-zA-Z0-9]+")) {
+		    System.out.println("The passport number has invalid characters!");
+		    if (!TryAgain()) return;
+		    else continue;
+		}
 		// passNum = URLEncoder.encode(passNum, "UTF-8");
 		// The above line will eliminate errors when user inputs '
 		// Should use prepared statements instead
@@ -363,6 +368,11 @@ public class AirBooking{
 		    if (!TryAgain()) return;
 		    else continue;
 		}
+		else if (!name.matches("[a-zA-Z]+")) {
+		    System.out.println("The name has invalid characters!");
+		    if (!TryAgain()) return;
+		    else continue;
+		}
 
 		break; // name is valid
 	    } catch (Exception e) {
@@ -395,6 +405,11 @@ public class AirBooking{
 		// Check that the country isn't too long
 		if (country.length() > 24) {
 		    System.out.println("The country name is too long!");
+		    if (!TryAgain()) return;
+		    else continue;
+		}
+		else if (!country.matches("[a-zA-Z]+")) {
+		    System.out.println("The name has invalid characters!");
 		    if (!TryAgain()) return;
 		    else continue;
 		}
@@ -683,7 +698,7 @@ public class AirBooking{
 
 		try {
 		    passport = in.readLine();
-		    if (passport.length() > 10) {
+		    if (passport.length() > 10 || !passport.matches("[a-zA-Z0-9]+")) {
 			System.out.println("Invalid passport number.");
 			if (!TryAgain()) return;
 			else continue;
@@ -728,9 +743,15 @@ public class AirBooking{
 			if (!TryAgain()) return;
 			else continue;
 		    }
+		    else if (!flightNum.matches("[a-zA-Z0-9]+")) {
+			System.out.println("The flight number has invalid characters!");
+			if (!TryAgain()) return;
+			else continue;
+		    }
 
 		    // Check if flight number exists
 		    String sqlflightNum = String.format("SELECT * FROM Flight WHERE flightNum = '%s';", flightNum);
+		    try {
 		    result = esql.executeQuery(sqlflightNum);
 		    if (result == 0) { // flight number doesn't exist
 			System.out.println(String.format("Flight '%s' doesn't exist.", flightNum));
@@ -739,6 +760,11 @@ public class AirBooking{
 		    }
 		    else { // flight number exists
 			break;
+		    }
+		    } catch (Exception e) {
+			System.out.println("Something went wrong!");
+			System.out.println(e.getMessage());
+			return;
 		    }
 		} catch (Exception e) {
 		    System.out.println("Invalid input.");
@@ -759,6 +785,7 @@ public class AirBooking{
 	    } catch (Exception e) {
 		System.out.println("Sorry, something went wrong.");
 		System.err.println(e.getMessage());
+		return;
 	    }
 
 	    // Check if a rating doesn't already exists
@@ -1075,7 +1102,12 @@ public class AirBooking{
 	    try {
 		origin = in.readLine();
 		if (origin.length() > 16) {
-		    System.out.println("Invalid origin.");
+		    System.out.println("The origin name is too long.");
+		    if (!TryAgain()) return;
+		    else continue;
+		}
+		else if (!origin.matches("[a-zA-Z]+")) {
+		    System.out.println("The origin has invalid characters!");
 		    if (!TryAgain()) return;
 		    else continue;
 		}
@@ -1093,7 +1125,12 @@ public class AirBooking{
 	    try {
 		destination = in.readLine();
 		if (destination.length() > 16) {
-		    System.out.println("Invalid destination.");
+		    System.out.println("The destination name is too long.");
+		    if (!TryAgain()) return;
+		    else continue;
+		}
+		else if (!destination.matches("[a-zA-Z]+")) {
+		    System.out.println("The destination has invalid characters!");
 		    if (!TryAgain()) return;
 		    else continue;
 		}
@@ -1272,7 +1309,12 @@ public class AirBooking{
 	    try {
 		origin = in.readLine();
 		if (origin.length() > 16) {
-		    System.out.println("Invalid origin.");
+		    System.out.println("The name of the origin is too long.");
+		    if (!TryAgain()) return;
+		    else continue;
+		}
+		else if (!origin.matches("[a-zA-Z]+")) {
+		    System.out.println("The origin has invalid characters!");
 		    if (!TryAgain()) return;
 		    else continue;
 		}
@@ -1290,7 +1332,12 @@ public class AirBooking{
 	    try {
 		destination = in.readLine();
 		if (destination.length() > 16) {
-		    System.out.println("Invalid destination.");
+		    System.out.println("The name of the destination is too long.");
+		    if (!TryAgain()) return;
+		    else continue;
+		}
+		else if (!destination.matches("[a-zA-Z]+")) {
+		    System.out.println("The destination has invalid characters!");
 		    if (!TryAgain()) return;
 		    else continue;
 		}
@@ -1350,13 +1397,19 @@ public class AirBooking{
 	    try {
 		flightNum = in.readLine();
 		if (flightNum.length() > 8) {
-		    System.out.println("Invalid flight number.");
+		    System.out.println("The flight number is too long.");
+		    if (!TryAgain()) return;
+		    else continue;
+		}
+		else if (!flightNum.matches("[a-zA-Z0-9]+")) {
+		    System.out.println("The flight number has invalid characters!");
 		    if (!TryAgain()) return;
 		    else continue;
 		}
 
 		// Check if flight number exists
 		String sqlflightNum = String.format("SELECT * FROM Flight WHERE flightNum = '%s';", flightNum);
+		try {
 		result = esql.executeQuery(sqlflightNum);
 		if (result == 0) { // flight number doesn't exist
 		    System.out.println("Flight doesn't exist, please enter a valid flight number.");
@@ -1365,6 +1418,11 @@ public class AirBooking{
 		}
 		else { // flight number exists
 		    break;
+		}
+		} catch (Exception e) {
+		    System.out.println("Something went wrong.");
+		    System.out.println(e.getMessage());
+		    return;
 		}
 	    } catch (Exception e) {
 		System.out.println("Invlaid input!");
